@@ -1,5 +1,7 @@
 # Xитмап
 
+**Демо версия**: [cg-hitbox.ipigeon15.ru](http://cg-hitbox.ipigeon15.ru)
+
 ## 1. Описание программы
 
 ### Что делает программа
@@ -48,8 +50,7 @@
 # Клонирование и запуск
 git clone <repository-url>
 cd motion-analysis-app
-mkdir sample_videos
-docker-compose up --build
+docker-compose up
 
 # Приложение будет доступно по адресу:
 # http://localhost:8000
@@ -127,6 +128,5 @@ docker-compose up --build
 
 ---
 
-**Демо версия**: [cg-hitbox.ipigeon15.ru](http://cg-hitbox.ipigeon15.ru)
 
 *Для вопросов и предложений создавайте Issues в репозитории проекта.*
