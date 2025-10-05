@@ -1,0 +1,160 @@
+/* Стили для информации о видео */
+.video-info-card {
+    background: #f8f9fa;
+    border: 1px solid #e9ecef;
+    border-radius: 8px;
+    margin-bottom: 20px;
+}
+
+.video-info-header {
+    background: #e9ecef;
+    padding: 12px 15px;
+    font-weight: 600;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    border-radius: 8px 8px 0 0;
+}
+
+.video-info-content {
+    padding: 15px;
+}
+
+.info-item {
+    display: flex;
+    justify-content: between;
+    margin-bottom: 8px;
+}
+
+.info-label {
+    font-weight: 500;
+    color: #495057;
+    flex: 1;
+}
+
+.info-value {
+    font-weight: 600;
+    color: #667eea;
+}
+
+/* Стили для временного диапазона */
+.time-range-container {
+    background: #f8f9fa;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.time-inputs {
+    display: flex;
+    align-items: center;
+    gap: 15px;
+    margin-bottom: 15px;
+}
+
+.time-input-group {
+    flex: 1;
+}
+
+.time-input-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.time-separator {
+    color: #6c757d;
+    font-size: 14px;
+}
+
+.time-display {
+    background: white;
+    padding: 5px 10px;
+    border-radius: 4px;
+    border: 1px solid #dee2e6;
+    font-family: monospace;
+    font-weight: 600;
+    text-align: center;
+    margin-top: 5px;
+    font-size: 14px;
+}
+
+.time-slider-container {
+    margin-bottom: 15px;
+}
+
+.time-slider-container label {
+    display: block;
+    margin-bottom: 8px;
+    font-size: 14px;
+    color: #495057;
+}
+
+.time-slider-wrapper {
+    position: relative;
+    height: 30px;
+    margin-bottom: 8px;
+}
+
+.time-slider {
+    position: absolute;
+    width: 100%;
+    top: 0;
+    left: 0;
+}
+
+.time-slider::-webkit-slider-thumb {
+    appearance: none;
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.time-slider::-moz-range-thumb {
+    height: 20px;
+    width: 20px;
+    border-radius: 50%;
+    background: #667eea;
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.2);
+}
+
+.time-labels {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 12px;
+    color: #6c757d;
+}
+
+.current-range {
+    font-weight: 600;
+    color: #495057;
+}
+
+.total-duration {
+    color: #6c757d;
+}
+
+.time-presets {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.btn-outline {
+    background: transparent;
+    border: 1px solid #667eea;
+    color: #667eea;
+}
+
+.btn-outline:hover {
+    background: #667eea;
+    color: white;
+}

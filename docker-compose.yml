@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  motion-analysis:
+    stop_grace_period: 5s
+    build: .
+    ports:
+      - "8000:8000"
+    volumes:
+      - ./sample_videos:/app/sample_videos
+      - ./temp:/app/temp
+    environment:
+      - PYTHONUNBUFFERED=1
+
+volumes:
+  sample_videos:
+  temp:

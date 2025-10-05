@@ -1,0 +1,17 @@
+[project]
+name = "hitbox"
+version = "0.1.0"
+description = "Add your description here"
+requires-python = ">=3.10"
+dependencies = [
+    "aiofiles>=24.1.0",
+    "fastapi>=0.118.0",
+    "jinja2>=3.1.6",
+    "matplotlib>=3.10.6",
+    "numpy>=2.2.6",
+    "opencv-python>=4.11.0.86",
+    "pillow>=11.3.0",
+    "pydantic-settings>=2.11.0",
+    "python-multipart>=0.0.20",
+    "uvicorn>=0.37.0",
+]

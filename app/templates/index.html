@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Анализ движения объектов</title>
+    <link rel="stylesheet" href="/static/style.css">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+</head>
+<body>
+    <div class="container">
+        <header class="header">
+            <h1><i class="fas fa-motion"></i> Система анализа движения объектов</h1>
+            <p class="subtitle">Обнаружение движения, построение тепловых карт и статистики активности</p>
+        </header>
+
+        <div class="main-content">
+            <!-- Левая колонка - Настройки -->
+            <div class="settings-panel">
+                <!-- Шаг 1: Выбор видео -->
+                <section class="section">
+                    <h2><i class="fas fa-video"></i> 1. Выбор видео</h2>
+
+                    <div class="upload-options">
+                        <div class="upload-option active" id="fileUploadOption">
+                            <label class="option-header">
+                                <input type="radio" name="uploadType" value="file" checked>
+                                Загрузить файл
+                            </label>
+                            <div class="option-content">
+                                <input type="file" id="videoFile" accept="video/*" class="file-input">
+                                <small class="help-text">MP4, AVI, MOV (макс. 100MB)</small>
+                            </div>
+                        </div>
+
+                        <div class="upload-option" id="sampleUploadOption">
+                            <label class="option-header">
+                                <input type="radio" name="uploadType" value="sample">
+                                Выбрать образец
+                            </label>
+                            <div class="option-content">
+                                <select id="sampleVideo" class="select-input">
+                                    <option value="">-- Выберите образец --</option>
+                                    {% for video in sample_videos %}
+                                    <option value="{{ video }}">{{ video }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+
+                    <button type="button" onclick="uploadVideo()" class="btn btn-primary" id="uploadBtn">
+                        <i class="fas fa-upload"></i> Загрузить видео
+                    </button>
+
+                    <div id="uploadStatus" class="status-message"></div>
+                </section>
+
+                <!-- Шаг 2: Настройки обработки -->
+                <section class="section" id="processingSettings" style="display: none;">
+                    <h2><i class="fas fa-sliders-h"></i> 2. Настройки обработки</h2>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Минимальная площадь контура:
+                            <span class="tooltip" title="Минимальный размер объекта для обнаружения. Меньшие значения чувствительнее к шуму.">
+                                <i class="fas fa-info-circle"></i>
+                            </span>
+                        </label>
+                        <input type="number" id="minContourArea" value="800" min="100" step="50" class="number-input">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">
+                            Прозрачность тепловой карты:
+                        </label>
+                        <input type="range" id="heatmapAlpha" min="0" max="1" step="0.1" value="0.5" class="slider">
+                        <span id="alphaValue" class="value-display">0.5</span>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Временной диапазон:</label>
+                        <div class="range-inputs">
+                            <input type="number" id="timeStart" value="0" min="0" step="1" placeholder="Начало (сек)" class="number-input small">
+                            <input type="number" id="timeEnd" value="-1" step="1" placeholder="Конец (сек)" class="number-input small">
+                        </div>
+                        <small class="help-text">-1 = обработать всё видео</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Цветовая схема:</label>
+                        <select id="colormap" class="select-input">
+                            <option value="COLORMAP_JET">Jet</option>
+                            <option value="COLORMAP_HOT">Hot</option>
+                            <option value="COLORMAP_COOL">Cool</option>
+                            <option value="COLORMAP_VIRIDIS">Viridis</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">Цвет рамки:</label>
+                        <input type="color" id="boxColor" value="#00ff00" class="color-input">
+                    </div>
+
+                    <div class="checkbox-group">
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="showHeatmap" checked>
+                            <span class="checkmark"></span>
+                            Показывать тепловую карту
+                        </label>
+                        <label class="checkbox-label">
+                            <input type="checkbox" id="showBoxes" checked>
+                            <span class="checkmark"></span>
+                            Показывать рамки объектов
+                        </label>
+                    </div>
+
+                    <button type="button" onclick="processVideo()" class="btn btn-success" id="processBtn">
+                        <i class="fas fa-play"></i> Начать обработку
+                    </button>
+                </section>
+            </div>
+
+            <!-- Правая колонка - Предпросмотр и результаты -->
+            <div class="preview-panel">
+                <!-- Предпросмотр исходного видео -->
+                <section class="section preview-section">
+                    <h2><i class="fas fa-eye"></i> Предпросмотр исходного видео</h2>
+                    <div class="preview-container" id="previewContainer" style="display: none;">
+                        <div class="preview-wrapper">
+                            <img id="preview" src="" alt="Предпросмотр видео" class="preview-image">
+                            <div class="preview-overlay" id="previewOverlay" style="display: none;">
+                                <i class="fas fa-pause"></i>
+                                <p>Предпросмотр на паузе</p>
+                            </div>
+                        </div>
+                        <div class="preview-controls">
+                            <button onclick="togglePreview()" class="btn btn-small btn-control" id="previewToggleBtn">
+                                <i class="fas fa-pause" id="previewIcon"></i>
+                                <span id="previewText">Пауза</span>
+                            </button>
+                            <button onclick="restartPreview()" class="btn btn-small btn-control">
+                                <i class="fas fa-redo"></i> Перезапустить
+                            </button>
+                        </div>
+                    </div>
+                    <div class="placeholder" id="previewPlaceholder">
+                        <i class="fas fa-film"></i>
+                        <p>Загрузите видео для предпросмотра</p>
+                    </div>
+                </section>
+
+                <!-- Прогресс обработки -->
+                <section class="section" id="progressSection" style="display: none;">
+                    <h2><i class="fas fa-tasks"></i> Прогресс обработки</h2>
+                    <div class="progress-container">
+                        <div class="progress-bar">
+                            <div class="progress-fill" id="progressFill" style="width: 0%"></div>
+                        </div>
+                        <div class="progress-text" id="progressText">0%</div>
+                    </div>
+                    <div class="progress-status" id="progressStatus">Подготовка к обработке...</div>
+                </section>
+
+                <!-- Предпросмотр результата -->
+                <section class="section" id="resultPreviewSection" style="display: none;">
+                    <h2><i class="fas fa-play-circle"></i> Предпросмотр результата</h2>
+                    <div class="preview-container">
+                        <img id="resultPreview" src="" alt="Предпросмотр результата" class="preview-image">
+                    </div>
+                </section>
+
+                <!-- Результаты -->
+                <section class="section" id="resultSection" style="display: none;">
+                    <h2><i class="fas fa-download"></i> Результаты</h2>
+                    <div class="result-content">
+                        <div class="success-message" id="successMessage">
+                            <i class="fas fa-check-circle"></i>
+                            <span>Обработка завершена успешно!</span>
+                        </div>
+                        <a id="downloadLink" class="btn btn-download">
+                            <i class="fas fa-download"></i> Скачать обработанное видео
+                        </a>
+                        <button onclick="cleanupAll()" class="btn btn-warning" style="margin-top: 10px; width: 100%;">
+                            <i class="fas fa-broom"></i> Очистить и начать заново
+                        </button>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentVideoPath = '';
+        let currentTaskId = '';
+        let previewPaused = false;
+        let progressInterval = null;
+        let currentPreviewUrl = '';
+        let currentResultPreviewUrl = '';
+
+        // Инициализация переключателей загрузки
+        document.addEventListener('DOMContentLoaded', function() {
+            const uploadOptions = document.querySelectorAll('input[name="uploadType"]');
+            uploadOptions.forEach(option => {
+                option.addEventListener('change', function() {
+                    document.querySelectorAll('.upload-option').forEach(opt => {
+                        opt.classList.remove('active');
+                    });
+                    this.closest('.upload-option').classList.add('active');
+                });
+            });
+        });
+
+        function getSelectedUploadType() {
+            return document.querySelector('input[name="uploadType"]:checked').value;
+        }
+
+        function uploadVideo() {
+            const uploadType = getSelectedUploadType();
+            const formData = new FormData();
+            let hasFile = false;
+
+            if (uploadType === 'file') {
+                const fileInput = document.getElementById('videoFile');
+                if (fileInput.files[0]) {
+                    formData.append('video_file', fileInput.files[0]);
+                    hasFile = true;
+                }
+            } else {
+                const sampleSelect = document.getElementById('sampleVideo');
+                if (sampleSelect.value) {
+                    formData.append('sample_video', sampleSelect.value);
+                    hasFile = true;
+                }
+            }
+
+            if (!hasFile) {
+                showAlert('Пожалуйста, выберите видео файл или образец', 'error');
+                return;
+            }
+
+            const uploadBtn = document.getElementById('uploadBtn');
+            const uploadStatus = document.getElementById('uploadStatus');
+
+            uploadBtn.disabled = true;
+            uploadBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Загрузка...';
+            uploadStatus.textContent = 'Загрузка видео...';
+            uploadStatus.className = 'status-message info';
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.detail || 'Ошибка загрузки')
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                currentVideoPath = data.video_path;
+                currentPreviewUrl = `/preview/${encodeURIComponent(data.video_path)}`;
+
+                // Показываем предпросмотр
+                document.getElementById('preview').src = currentPreviewUrl;
+                document.getElementById('previewContainer').style.display = 'block';
+                document.getElementById('previewPlaceholder').style.display = 'none';
+                document.getElementById('processingSettings').style.display = 'block';
+
+                uploadStatus.textContent = 'Видео успешно загружено!';
+                uploadStatus.className = 'status-message success';
+                showAlert('Видео успешно загружено!', 'success');
+            })
+            .catch(error => {
+                console.error('Upload error:', error);
+                uploadStatus.textContent = 'Ошибка: ' + error.message;
+                uploadStatus.className = 'status-message error';
+                showAlert('Ошибка загрузки видео: ' + error.message, 'error');
+            })
+            .finally(() => {
+                uploadBtn.disabled = false;
+                uploadBtn.innerHTML = '<i class="fas fa-upload"></i> Загрузить видео';
+            });
+        }
+
+        function processVideo() {
+            if (!currentVideoPath) {
+                showAlert('Пожалуйста, сначала загрузите видео', 'error');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('video_path', currentVideoPath);
+            formData.append('min_contour_area', document.getElementById('minContourArea').value);
+            formData.append('heatmap_alpha', document.getElementById('heatmapAlpha').value);
+            formData.append('show_heatmap', document.getElementById('showHeatmap').checked);
+            formData.append('show_boxes', document.getElementById('showBoxes').checked);
+            formData.append('box_color', document.getElementById('boxColor').value);
+            formData.append('colormap', document.getElementById('colormap').value);
+            formData.append('time_range_start', document.getElementById('timeStart').value);
+            formData.append('time_range_end', document.getElementById('timeEnd').value);
+
+            const processBtn = document.getElementById('processBtn');
+            processBtn.disabled = true;
+            processBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Обработка...';
+            document.getElementById('progressSection').style.display = 'block';
+
+            fetch('/process', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => {
+                if (!response.ok) {
+                    return response.json().then(err => {
+                        throw new Error(err.detail || 'Ошибка обработки')
+                    });
+                }
+                return response.json();
+            })
+            .then(data => {
+                currentTaskId = data.task_id;
+                showAlert('Обработка начата. Отслеживайте прогресс ниже.', 'info');
+                startProgressTracking();
+            })
+            .catch(error => {
+                console.error('Process error:', error);
+                showAlert('Ошибка начала обработки: ' + error.message, 'error');
+                resetProcessButton();
+            });
+        }
+
+        function startProgressTracking() {
+            progressInterval = setInterval(() => {
+                if (!currentTaskId) return;
+
+                fetch(`/task/${currentTaskId}`)
+                    .then(response => response.json())
+                    .then(task => {
+                        updateProgress(task);
+
+                        if (task.status === 'completed') {
+                            clearInterval(progressInterval);
+                            showResult(task);
+                        } else if (task.status === 'error') {
+                            clearInterval(progressInterval);
+                            showAlert('Ошибка обработки: ' + task.error, 'error');
+                            resetProcessButton();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Progress check error:', error);
+                    });
+            }, 1000);
+        }
+
+        function updateProgress(task) {
+            const progress = task.progress || 0;
+            document.getElementById('progressFill').style.width = progress + '%';
+            document.getElementById('progressText').textContent = progress + '%';
+
+            let statusText = 'Обработка...';
+            if (progress < 25) statusText = 'Инициализация...';
+            else if (progress < 50) statusText = 'Обнаружение движения...';
+            else if (progress < 75) statusText = 'Построение тепловой карты...';
+            else if (progress < 100) statusText = 'Финальная обработка...';
+
+            document.getElementById('progressStatus').textContent = statusText;
+        }
+
+        function showResult(task) {
+            document.getElementById('progressStatus').textContent = 'Обработка завершена!';
+            document.getElementById('resultSection').style.display = 'block';
+            document.getElementById('downloadLink').href = task.download_url;
+
+            // Показываем предпросмотр результата
+            document.getElementById('resultPreviewSection').style.display = 'block';
+            currentResultPreviewUrl = `/preview_result/${task.output_path.split('/').pop()}`;
+            document.getElementById('resultPreview').src = currentResultPreviewUrl;
+
+            resetProcessButton();
+            showAlert('Обработка завершена успешно!', 'success');
+        }
+
+        function resetProcessButton() {
+            const processBtn = document.getElementById('processBtn');
+            processBtn.disabled = false;
+            processBtn.innerHTML = '<i class="fas fa-play"></i> Начать обработку';
+        }
+
+        function togglePreview() {
+            const preview = document.getElementById('preview');
+            const previewIcon = document.getElementById('previewIcon');
+            const previewText = document.getElementById('previewText');
+            const previewOverlay = document.getElementById('previewOverlay');
+
+            if (previewPaused) {
+                // Возобновляем предпросмотр
+                preview.src = currentPreviewUrl;
+                previewOverlay.style.display = 'none';
+                previewIcon.className = 'fas fa-pause';
+                previewText.textContent = 'Пауза';
+            } else {
+                // Ставим на паузу (просто скрываем изображение)
+                preview.src = '';
+                previewOverlay.style.display = 'flex';
+                previewIcon.className = 'fas fa-play';
+                previewText.textContent = 'Продолжить';
+            }
+
+            previewPaused = !previewPaused;
+        }
+
+        function restartPreview() {
+            const preview = document.getElementById('preview');
+            const previewOverlay = document.getElementById('previewOverlay');
+
+            // Полностью перезапускаем стрим
+            preview.src = '';
+            setTimeout(() => {
+                preview.src = currentPreviewUrl;
+                previewOverlay.style.display = 'none';
+                previewPaused = false;
+                document.getElementById('previewIcon').className = 'fas fa-pause';
+                document.getElementById('previewText').textContent = 'Пауза';
+            }, 100);
+        }
+
+        function cleanupAll() {
+            // Останавливаем все интервалы
+            if (progressInterval) {
+                clearInterval(progressInterval);
+                progressInterval = null;
+            }
+
+            // Сбрасываем UI
+            document.getElementById('previewContainer').style.display = 'none';
+            document.getElementById('previewPlaceholder').style.display = 'block';
+            document.getElementById('processingSettings').style.display = 'none';
+            document.getElementById('progressSection').style.display = 'none';
+            document.getElementById('resultPreviewSection').style.display = 'none';
+            document.getElementById('resultSection').style.display = 'none';
+
+            // Сбрасываем переменные
+            currentVideoPath = '';
+            currentTaskId = '';
+            previewPaused = false;
+            currentPreviewUrl = '';
+            currentResultPreviewUrl = '';
+
+            // Сбрасываем форму
+            document.getElementById('videoFile').value = '';
+            document.getElementById('sampleVideo').value = '';
+            document.querySelector('input[name="uploadType"][value="file"]').checked = true;
+            document.querySelectorAll('.upload-option').forEach(opt => {
+                opt.classList.remove('active');
+            });
+            document.getElementById('fileUploadOption').classList.add('active');
+
+            showAlert('Система очищена. Можно начать заново.', 'info');
+        }
+
+        function showAlert(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.innerHTML = `
+                <div class="alert-content">
+                    <i class="fas fa-${type === 'error' ? 'exclamation-triangle' : type === 'success' ? 'check-circle' : 'info-circle'}"></i>
+                    <span>${message}</span>
+                </div>
+            `;
+
+            alertDiv.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                padding: 15px 20px;
+                border-radius: 8px;
+                color: white;
+                z-index: 1000;
+                font-weight: 500;
+                background: ${type === 'error' ? '#dc3545' : type === 'success' ? '#28a745' : '#17a2b8'};
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                min-width: 300px;
+                max-width: 500px;
+            `;
+
+            document.body.appendChild(alertDiv);
+
+            setTimeout(() => {
+                if (alertDiv.parentNode) {
+                    document.body.removeChild(alertDiv);
+                }
+            }, 4000);
+        }
+
+        // Обновление отображения значения прозрачности
+        document.getElementById('heatmapAlpha').addEventListener('input', function() {
+            document.getElementById('alphaValue').textContent = this.value;
+        });
+    </script>
+</body>
+</html>
